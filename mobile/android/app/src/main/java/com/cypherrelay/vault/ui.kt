@@ -62,7 +62,7 @@ fun ScanScreen(onRedeemed: () -> Unit) {
 }
 
 @Composable
-fun VaultScreen(onOpenPathways: () -> Unit) {
+fun VaultScreen(onOpenPathways: () -> Unit, onOpenContacts: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp)) {
         Text("$25.00 USD", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
         Text("25 CYRD", style = MaterialTheme.typography.bodyLarge)
@@ -76,6 +76,8 @@ fun VaultScreen(onOpenPathways: () -> Unit) {
             OutlinedButton(onClick = onOpenPathways) { Text("Swap (Locked)") }
             OutlinedButton(onClick = onOpenPathways) { Text("Explore (Locked)") }
         }
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(onClick = onOpenContacts) { Text("Trusted Contacts") }
     }
 }
 
@@ -87,5 +89,42 @@ fun PathwaysScreen(onDone: () -> Unit) {
         Text("Crypto addresses are like email, but for money. Always double-check them!")
         Spacer(Modifier.height(24.dp))
         Button(onClick = onDone) { Text("Answer: Double-check the address") }
+    }
+}
+
+@Composable
+fun ContactsScreen(onDone: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var method by remember { mutableStateOf("sms") }
+    var value by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
+    var feedback by remember { mutableStateOf<String?>(null) }
+
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Trusted Contacts", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+        OutlinedTextField(value = value, onValueChange = { value = it }, label = { Text("Phone or Email") })
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FilterChip(selected = method == "sms", onClick = { method = "sms" }, label = { Text("SMS") })
+            FilterChip(selected = method == "email", onClick = { method = "email" }, label = { Text("Email") })
+        }
+        Button(enabled = !submitting, onClick = {
+            submitting = true
+            feedback = null
+            val userId = ApiClient.defaultDeviceId()
+            val contacts = listOf(com.cypherrelay.vault.network.Contact(name = name, method = method, value = value))
+            kotlinx.coroutines.GlobalScope.launch {
+                try {
+                    ApiClient.api.setContacts(userId, contacts)
+                    feedback = "Saved"
+                } catch (t: Throwable) {
+                    feedback = t.message
+                } finally {
+                    submitting = false
+                }
+            }
+        }) { Text(if (submitting) "Saving..." else "Save") }
+        OutlinedButton(onClick = onDone) { Text("Done") }
+        if (feedback != null) Text(feedback!!)
     }
 }

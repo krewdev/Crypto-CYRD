@@ -25,8 +25,9 @@ fun RelayVaultApp() {
     Surface(color = MaterialTheme.colorScheme.background) {
         NavHost(navController = navController, startDestination = "scan") {
             composable("scan") { ScanScreen(onRedeemed = { navController.navigate("vault") }) }
-            composable("vault") { VaultScreen(onOpenPathways = { navController.navigate("pathways") }) }
+            composable("vault") { VaultScreen(onOpenPathways = { navController.navigate("pathways") }, onOpenContacts = { navController.navigate("contacts") }) }
             composable("pathways") { PathwaysScreen(onDone = { navController.popBackStack() }) }
+            composable("contacts") { ContactsScreen(onDone = { navController.popBackStack() }) }
         }
     }
 }

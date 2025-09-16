@@ -7,6 +7,8 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.Query
+import retrofit2.http.GET
+import retrofit2.http.Path
 import java.util.UUID
 
 @JsonClass(generateAdapter = true)
@@ -37,6 +39,12 @@ interface RelayApi {
 
     @POST("/wallet/recovery/start")
     suspend fun startRecovery(@Query("user_id") userId: String): Map<String, Any>
+
+    @GET("/pathways/{user_id}")
+    suspend fun getPathways(@Path("user_id") userId: String): List<PathwayStatus>
+
+    @POST("/pathways/update")
+    suspend fun updatePathway(@Body body: PathwayUpdateRequest): PathwayStatus
 }
 
 object ApiClient {
@@ -56,4 +64,17 @@ data class Contact(
     val name: String,
     val method: String,
     val value: String
+)
+
+@JsonClass(generateAdapter = true)
+data class PathwayStatus(
+    val pathway_id: String,
+    val status: String
+)
+
+@JsonClass(generateAdapter = true)
+data class PathwayUpdateRequest(
+    val user_id: String,
+    val pathway_id: String,
+    val status: String
 )

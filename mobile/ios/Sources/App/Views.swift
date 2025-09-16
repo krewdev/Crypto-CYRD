@@ -29,6 +29,7 @@ struct ScanView: View {
 struct VaultView: View {
     @State private var showPathways = false
     @State private var showContacts = false
+    @State private var showContactsPathway = false
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("$25.00 USD").font(.largeTitle).bold()
@@ -40,11 +41,12 @@ struct VaultView: View {
                 Button("Swap (Locked)") { showPathways = true }
                 Button("Explore (Locked)") { showPathways = true }
             }
-            Button("Trusted Contacts") { showContacts = true }
+            Button("Trusted Contacts") { showContactsPathway = true }
         }
         .padding()
         .sheet(isPresented: $showPathways) { PathwaysView() }
         .sheet(isPresented: $showContacts) { ContactsView() }
+        .sheet(isPresented: $showContactsPathway) { ContactsPathwayView(onDone: { showContactsPathway = false; showContacts = true }) }
     }
 }
 
@@ -57,6 +59,34 @@ struct PathwaysView: View {
             Button("Answer: Double-check the address") { dismiss() }
         }
         .padding()
+    }
+}
+
+struct ContactsPathwayView: View {
+    var onDone: () -> Void
+    @State private var error: String?
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Trusted Contacts").font(.title).bold()
+            Text("Add 1–2 people who can approve a recovery.")
+            Button("Continue") {
+                let body: [String: Any] = [
+                    "user_id": UUID().uuidString,
+                    "pathway_id": "trusted_contacts",
+                    "status": "unlocked"
+                ]
+                var req = URLRequest(url: URL(string: "http://localhost:8000/pathways/update")!)
+                req.httpMethod = "POST"
+                req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+                URLSession.shared.dataTask(with: req) { _, resp, err in
+                    DispatchQueue.main.async {
+                        if let err = err { error = err.localizedDescription } else { onDone() }
+                    }
+                }.resume()
+            }
+            if let error = error { Text(error).foregroundColor(.red) }
+        }.padding()
     }
 }
 

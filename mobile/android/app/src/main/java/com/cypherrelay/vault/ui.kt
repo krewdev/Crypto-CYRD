@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import com.cypherrelay.vault.network.ApiClient
 import com.cypherrelay.vault.network.RedeemRequest
 import com.cypherrelay.vault.qr.QRScannerView
+import com.cypherrelay.vault.network.PathwayUpdateRequest
 
 class ScanViewModel: ViewModel() {
     var loading by mutableStateOf(false)
@@ -115,6 +116,8 @@ fun ContactsScreen(onDone: () -> Unit) {
             val contacts = listOf(com.cypherrelay.vault.network.Contact(name = name, method = method, value = value))
             kotlinx.coroutines.GlobalScope.launch {
                 try {
+                    // Unlock pathway before allowing save
+                    ApiClient.api.updatePathway(PathwayUpdateRequest(user_id = userId, pathway_id = "trusted_contacts", status = "unlocked"))
                     ApiClient.api.setContacts(userId, contacts)
                     feedback = "Saved"
                 } catch (t: Throwable) {
@@ -126,5 +129,16 @@ fun ContactsScreen(onDone: () -> Unit) {
         }) { Text(if (submitting) "Saving..." else "Save") }
         OutlinedButton(onClick = onDone) { Text("Done") }
         if (feedback != null) Text(feedback!!)
+    }
+}
+
+@Composable
+fun ContactsPathway(onContinue: () -> Unit) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Trusted Contacts keep your vault safe.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text("Add 1–2 people who can approve a recovery.")
+        Spacer(Modifier.height(24.dp))
+        Button(onClick = onContinue) { Text("Got it") }
     }
 }

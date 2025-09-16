@@ -2,14 +2,27 @@ import SwiftUI
 
 struct ScanView: View {
     @State private var navigate = false
+    @State private var error: String?
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Scan Your Card").font(.title).bold()
-            Button("Simulate Redeem") { navigate = true }
-            Button("What is this?") {}
+        VStack(spacing: 0) {
+            QRScannerView { code in
+                APIClient.shared.redeem { result in
+                    switch result {
+                    case .success:
+                        navigate = true
+                    case .failure(let err):
+                        error = err.localizedDescription
+                    }
+                }
+            }
+            .frame(height: 400)
+            VStack(spacing: 12) {
+                Text("Scan Your Card").font(.title).bold()
+                if let error = error { Text(error).foregroundColor(.red) }
+                Button("What is this?") {}
+            }.padding()
             NavigationLink("", destination: VaultView(), isActive: $navigate) { EmptyView() }
         }
-        .padding()
     }
 }
 

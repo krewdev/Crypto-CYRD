@@ -12,19 +12,23 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
 import com.cypherrelay.vault.network.ApiClient
 import com.cypherrelay.vault.network.RedeemRequest
+import com.cypherrelay.vault.qr.QRScannerView
 
 class ScanViewModel: ViewModel() {
     var loading by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
+    var scanned by mutableStateOf<String?>(null)
 
-    fun redeemSimulated(onSuccess: () -> Unit) {
+    fun onScanned(code: String, onSuccess: () -> Unit) {
+        if (loading) return
+        scanned = code
         viewModelScope.launch {
             try {
                 loading = true
                 error = null
                 val req = RedeemRequest(
                     device_id = ApiClient.defaultDeviceId(),
-                    qr_code = "SIMULATED-QR-CODE",
+                    qr_code = code,
                     chain = "polygon"
                 )
                 ApiClient.api.redeem(req)
@@ -41,13 +45,19 @@ class ScanViewModel: ViewModel() {
 @Composable
 fun ScanScreen(onRedeemed: () -> Unit) {
     val vm = remember { ScanViewModel() }
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Scan Your Card", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
-        Button(enabled = !vm.loading, onClick = { vm.redeemSimulated(onRedeemed) }) { Text(if (vm.loading) "Redeeming..." else "Simulate Redeem") }
-        Spacer(Modifier.height(8.dp))
-        if (vm.error != null) { Text(vm.error!!, color = MaterialTheme.colorScheme.error) }
-        TextButton(onClick = {}) { Text("What is this?") }
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) {
+            QRScannerView(modifier = Modifier.fillMaxSize()) { code ->
+                vm.onScanned(code, onRedeemed)
+            }
+        }
+        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Scan Your Card", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            if (vm.loading) { Text("Redeeming...") }
+            if (vm.error != null) { Text(vm.error!!, color = MaterialTheme.colorScheme.error) }
+            TextButton(onClick = {}) { Text("What is this?") }
+        }
     }
 }
 

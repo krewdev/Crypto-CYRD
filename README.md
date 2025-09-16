@@ -14,3 +14,11 @@ Structure
 - `infra/` Docker Compose and environment templates
 
 See `infra/README.md` for setup instructions once scaffolding is complete.
+
+Quickstart
+----------
+
+- Backend: `cd backend && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && uvicorn app.main:app --reload`
+- Android: Open `mobile/android` in Android Studio; run app
+- iOS: Open `mobile/ios` in Xcode (SwiftPM), run `RelayVaultApp`
+- Contracts (EVM): `cd contracts/evm && npm install && npm run build`

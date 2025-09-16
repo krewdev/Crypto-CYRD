@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: cypher-relay-api
+    env: node
+    region: oregon # or singapore, frankfurt, ohio
+    plan: starter # $7/month, upgrade to standard ($25) when needed
+    buildCommand: npm install --production
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    
+    # Auto-deploy from GitHub
+    repo: https://github.com/YOUR_GITHUB/cypher-relay
+    branch: main
+    rootDir: backend
+    
+    # Environment variables (add actual values in Render dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false # Add in dashboard for security
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true # Render generates secure value
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 60000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+        
+    # Scaling (automatic on starter plan)
+    scaling:
+      minInstances: 1
+      maxInstances: 1 # Upgrade plan for auto-scaling

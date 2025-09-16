@@ -7,6 +7,7 @@ from datetime import datetime
 from app.deps import get_db
 from app.db.models import Card, User, TransactionLog
 from app.core.config import settings
+from app.chains.evm import make_client as make_evm_client
 
 
 router = APIRouter(prefix="/redeem", tags=["redeem"])
@@ -58,6 +59,19 @@ def redeem_card(payload: RedeemRequest, db: Session = Depends(get_db)):
         wallet_address = f"sim-{payload.chain.lower()}-{user.user_id[:8]}"
         setattr(user, wallet_address_attr, wallet_address)
 
+    # If EVM is enabled and chain is supported with an EVM address, call on-chain redemption
+    tx_hash: str | None = None
+    note = "Simulated redemption"
+    if settings.evm_enabled and payload.chain.lower() in {"polygon", "arbitrum"} and wallet_address.startswith("0x"):
+        evm = make_evm_client(payload.chain)
+        if evm:
+            amount_wei = int(card.value_cyrd) * 10**18
+            try:
+                tx_hash = evm.redeem(wallet_address, amount_wei)
+                note = "On-chain redemption"
+            except Exception as e:
+                raise HTTPException(status_code=502, detail=f"On-chain redemption failed: {e}")
+
     # Mark card redeemed
     card.is_redeemed = True
     card.redeemed_at = datetime.utcnow()
@@ -68,8 +82,8 @@ def redeem_card(payload: RedeemRequest, db: Session = Depends(get_db)):
         chain=payload.chain.lower(),
         tx_type="redeem",
         amount_cyrd=card.value_cyrd,
-        tx_hash=None,
-        note="Simulated redemption",
+        tx_hash=tx_hash,
+        note=note,
     )
     db.add(log)
 

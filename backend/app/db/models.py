@@ -48,3 +48,43 @@ class TransactionLog(Base):
     tx_hash = Column(String, nullable=True)
     note = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MPCWallet(Base):
+    __tablename__ = "mpc_wallets"
+
+    wallet_id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MPCKeyShare(Base):
+    __tablename__ = "mpc_key_shares"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    wallet_id = Column(String, nullable=False, index=True)
+    share_type = Column(String, nullable=False)  # device|cloud|server
+    provider = Column(String, nullable=True)  # icloud|gdrive|...
+    share_encrypted = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class TrustedContact(Base):
+    __tablename__ = "trusted_contacts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    method = Column(String, nullable=False)  # sms|email|app
+    value = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecoveryRequest(Base):
+    __tablename__ = "recovery_requests"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="pending")  # pending|approved|completed|cancelled
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

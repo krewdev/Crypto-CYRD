@@ -8,6 +8,7 @@ from app.deps import get_db
 from app.db.models import Card, User, TransactionLog
 from app.core.config import settings
 from app.chains.evm import make_client as make_evm_client
+from app.mpc.service import MPCService
 
 
 router = APIRouter(prefix="/redeem", tags=["redeem"])
@@ -58,6 +59,9 @@ def redeem_card(payload: RedeemRequest, db: Session = Depends(get_db)):
     if wallet_address is None:
         wallet_address = f"sim-{payload.chain.lower()}-{user.user_id[:8]}"
         setattr(user, wallet_address_attr, wallet_address)
+
+    # Ensure MPC wallet exists for user
+    MPCService(db).ensure_wallet(user.user_id)
 
     # If EVM is enabled and chain is supported with an EVM address, call on-chain redemption
     tx_hash: str | None = None

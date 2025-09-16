@@ -1,0 +1,141 @@
+# Default values for cypher-relay
+replicaCount: 3
+
+image:
+  repository: cypherrelay/api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: api.cypherrelay.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: cypher-relay-tls
+      hosts:
+        - api.cypherrelay.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - cypher-relay
+        topologyKey: kubernetes.io/hostname
+
+postgresql:
+  enabled: true
+  auth:
+    username: cypher_user
+    database: cypher_relay
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+  metrics:
+    enabled: true
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+  replica:
+    replicaCount: 2
+  metrics:
+    enabled: true
+
+# Application configuration
+config:
+  nodeEnv: production
+  port: 3000
+  logLevel: info
+  
+secrets:
+  databaseUrl: ""
+  jwtSecret: ""
+  encryptionKey: ""
+  backendPrivateKey: ""
+  
+blockchain:
+  polygonRpcUrl: "https://polygon-rpc.com"
+  arbitrumRpcUrl: "https://arb1.arbitrum.io/rpc"
+  
+contracts:
+  polygon:
+    cyrdToken: ""
+    redemption: ""
+  arbitrum:
+    cyrdToken: ""
+    redemption: ""
+
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  loki:
+    enabled: true
